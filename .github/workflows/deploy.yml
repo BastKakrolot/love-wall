@@ -1,0 +1,83 @@
+name: Docker Image CI
+
+on:
+  push: # push 时触发ci
+    branches: [ master ] # 作用于master分支
+  # pull_request:
+  #   branches: [master]
+env:
+  # Use docker.io for Docker Hub if empty
+  REGISTRY: ""
+  # github.repository as <account>/<repo>
+  IMAGE_NAME: love-wall
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 拉取main分支代码
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Build the Docker image
+        run: docker build . --file Dockerfile --tag ${{env.IMAGE_NAME}}
+      - name: echo
+        run: echo $GITHUB_REF_NAME
+      # 登录
+      - name: Log into registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          logout: false
+      # Extract metadata (tags, labels) for Docker
+      # https://github.com/docker/metadata-action
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            # set latest tag for default branch
+            type=raw,value=latest,enable={{is_default_branch}}
+            # tag event
+            type=ref,enable=true,priority=600,prefix=,suffix=,event=tag
+      # 推送
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: blackcellcode/${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+      # 登录远程服务器，拉取镜像，制作并重启容器
+      # https://github.com/marketplace/actions/remote-ssh-commands
+      - name: ssh remote deploy
+        uses: fifsky/ssh-action@master
+        with:
+          command: |
+            cd /
+            echo -e "1.docker login start==>"
+            echo ${{ secrets.DOCKER_PASSWORD }} | docker login --username ${{ secrets.DOCKER_USERNAME }} --password-stdin
+
+            echo -e "2.docker stop loveWall container==>"
+            docker container stop loveWall
+
+            echo -e "3.docker conatainer rm==>"
+            docker container rm loveWall
+
+            echo -e "4.docker image rm==>"
+            docker image rm blackcellcode/${{ steps.meta.outputs.tags }}
+
+            echo -e "5.docker pull==>"
+            docker pull blackcellcode/${{ steps.meta.outputs.tags }}
+
+            echo -e "6.docker container create and start==>"
+            docker container run -d -p 3000:3001 --name loveWall blackcellcode/${{ steps.meta.outputs.tags }}
+
+            echo -e "7.docker logout==>"
+            docker logout
+          host: ${{ secrets.HOST }}
+          user: ${{ secrets.USER }}
+          pass: ${{ secrets.PASSWORD }}
