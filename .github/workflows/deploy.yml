@@ -74,7 +74,7 @@ jobs:
             docker pull blackcellcode/${{ steps.meta.outputs.tags }}
 
             echo -e "6.docker container create and start==>"
-            docker container run -d -p 3000:3001 --name loveWall blackcellcode/${{ steps.meta.outputs.tags }}
+            docker container run -d -p 3001:3000 --name loveWall blackcellcode/${{ steps.meta.outputs.tags }}
 
             echo -e "7.docker logout==>"
             docker logout
