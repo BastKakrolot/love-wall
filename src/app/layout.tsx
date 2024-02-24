@@ -2,15 +2,14 @@ import type {Metadata} from "next";
 import {Inter as FontSans} from "next/font/google"
 import "./globals.css";
 import {cn} from "@/lib/utils"
-import Image from "next/image";
 
 const fontSans = FontSans({
     subsets: ["latin"],
     variable: "--font-sans",
 })
 export const metadata: Metadata = {
-    title: "武软表白墙",
-    description: "武软表白墙（非官方）",
+    title: "勿入庵",
+    description: "勿入庵wu·ru·an",
 };
 
 export default function RootLayout({
@@ -29,10 +28,7 @@ export default function RootLayout({
             <div className="container flex h-14 max-w-screen-2xl items-center">
                 <div className="mr-4">
                     <a className="mr-6 flex items-center space-x-2" href="/">
-                        <Image src="/wuruan-logo.png" width="220" height="30" alt=""></Image>
-                        <span className="font-light">
-                               | 表白墙
-                            </span>
+                        勿入庵 wu·ru·an
                     </a>
                 </div>
                 <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
